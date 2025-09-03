@@ -16,6 +16,7 @@ load_dotenv()
 PEER_IP = os.getenv("PC_IP")
 
 last_clipboard = None
+#ensures there's no race condition
 updating = False
 
 @app.route("/update", methods=["POST"])
