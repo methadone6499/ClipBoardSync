@@ -32,7 +32,7 @@ cd clipboardsync
 Install the required Python packages on both machines:
 
 ```bash
-pip install flask pyperclip pillow requests
+pip install flask pyperclip pillow requests pywin32
 ```
 
 ### 3. Configure Network Settings
