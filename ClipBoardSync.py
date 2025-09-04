@@ -54,12 +54,12 @@ def watch_clipboard():
         if not updating:
             current = pyperclip.paste()
             current_image = ImageGrab.grabclipboard()
-            if current_image != last_clipboard_img:
+            if (current_image != last_clipboard_img)  & (current_image is not None):
                 print("sdfhsiod")
                 last_clipboard = current
                 last_clipboard_img = current_image
                 buffer = BytesIO()
-                current_image.save(buffer, format="PNG")
+                current_image.save(buffer, format="PNG") # failing point because copying text would leave current_image as a None object
                 img_bytes = buffer.getvalue()
 
                 # Convert to base64 string
@@ -71,7 +71,7 @@ def watch_clipboard():
                 except:
                     pass
                 
-            if current != last_clipboard:
+            if (current != last_clipboard) & (current is not None):
                 last_clipboard = current
                 try:
                     requests.post(f"http://{PEER_IP}/update",
