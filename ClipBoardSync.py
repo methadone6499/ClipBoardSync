@@ -5,9 +5,11 @@ import time
 import base64
 from io import BytesIO
 from PIL import Image
+from PIL import ImageGrab
 from flask import Flask, request, jsonify
 import os
 from dotenv import load_dotenv
+import win32clipboard
 
 app = Flask(__name__)
 
@@ -16,6 +18,7 @@ load_dotenv()
 PEER_IP = os.getenv("PC_IP")
 
 last_clipboard = None
+last_clipboard_img = None
 #ensures there's no race condition
 updating = False
 
@@ -33,19 +36,41 @@ def update_clipboard():
         img_data = base64.b64decode(data["data"])
         img = Image.open(BytesIO(img_data))
         img.show()
-        buf = BytesIO
-        img.save(buf, format="PNG")
-        pyperclip.copy("[[IMAGE]]")
-        last_clipboard = "[[IMAGE]]"
+        buf = BytesIO()
+        img.convert("RGB").save(buf, "BMP")
+        imgfr = buf.getvalue()[14:]
+        buf.close()
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, imgfr)
+        win32clipboard.CloseClipboard()
     
     updating = False
     return jsonify({"status": "ok"})
 
 def watch_clipboard():
-    global last_clipboard, updating
+    global last_clipboard, updating, last_clipboard_img
     while True:
         if not updating:
             current = pyperclip.paste()
+            current_image = ImageGrab.grabclipboard()
+            if current_image != last_clipboard_img:
+                print("sdfhsiod")
+                last_clipboard = current
+                last_clipboard_img = current_image
+                buffer = BytesIO()
+                current_image.save(buffer, format="PNG")
+                img_bytes = buffer.getvalue()
+
+                # Convert to base64 string
+                img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+                try:
+                    requests.post(f"http://{PEER_IP}/update",
+                                  json={"type": "image", "data":  img_b64},
+                                  timeout=2)
+                except:
+                    pass
+                
             if current != last_clipboard:
                 last_clipboard = current
                 try:
@@ -54,7 +79,6 @@ def watch_clipboard():
                                   timeout=2)
                 except:
                     pass
-        
         time.sleep(0.5)
 
 def start():
