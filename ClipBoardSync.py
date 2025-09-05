@@ -24,7 +24,7 @@ updating = False
 
 @app.route("/update", methods=["POST"])
 def update_clipboard():
-    global last_clipboard, updating
+    global last_clipboard, updating, last_clipboard_img
     data = request.json
     updating = True
 
@@ -44,26 +44,27 @@ def update_clipboard():
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardData(win32clipboard.CF_DIB, imgfr)
         win32clipboard.CloseClipboard()
+        last_clipboard_img = data["data"]
     
     updating = False
     return jsonify({"status": "ok"})
 
 def watch_clipboard():
-    global last_clipboard, updating, last_clipboard_img
+    global last_clipboard, updating, last_clipboard_img, img_b64
     while True:
         if not updating:
             current = pyperclip.paste()
             current_image = ImageGrab.grabclipboard()
+            if current_image is not None:
+                buffer = BytesIO()
+                current_image.save(buffer, format="PNG")
+                img_bytes = buffer.getvalue()
+                img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+                current_image = img_b64
+
             if (current_image != last_clipboard_img)  & (current_image is not None):
-                print("sdfhsiod")
                 last_clipboard = current
                 last_clipboard_img = current_image
-                buffer = BytesIO()
-                current_image.save(buffer, format="PNG") # failing point because copying text would leave current_image as a None object
-                img_bytes = buffer.getvalue()
-
-                # Convert to base64 string
-                img_b64 = base64.b64encode(img_bytes).decode("utf-8")
                 try:
                     requests.post(f"http://{PEER_IP}/update",
                                   json={"type": "image", "data":  img_b64},
@@ -73,6 +74,7 @@ def watch_clipboard():
                 
             if (current != last_clipboard) & (current is not None):
                 last_clipboard = current
+                last_clipboard_img = current_image
                 try:
                     requests.post(f"http://{PEER_IP}/update",
                                   json={"type": "text", "data":  current},
@@ -88,5 +90,4 @@ def start():
 
 if __name__ == "__main__":
     print(PEER_IP)
-    print("dhfsodifsd")
     start()
