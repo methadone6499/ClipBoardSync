@@ -35,7 +35,6 @@ def update_clipboard():
     elif data["type"] == "image":
         img_data = base64.b64decode(data["data"])
         img = Image.open(BytesIO(img_data))
-        img.show()
         buf = BytesIO()
         img.convert("RGB").save(buf, "BMP")
         imgfr = buf.getvalue()[14:]
