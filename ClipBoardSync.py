@@ -22,7 +22,7 @@ last_clipboard_img = None
 #ensures there's no race condition
 updating = False
 
-@app.route("/update", methods=["POST"])
+@app.route("/updateClipBoard", methods=["POST"])
 def update_clipboard():
     global last_clipboard, updating, last_clipboard_img
     data = request.json
@@ -65,7 +65,7 @@ def watch_clipboard():
                 last_clipboard = current
                 last_clipboard_img = current_image
                 try:
-                    requests.post(f"http://{PEER_IP}/update",
+                    requests.post(f"http://{PEER_IP}/updateClipBoard",
                                   json={"type": "image", "data":  img_b64},
                                   timeout=2)
                 except:
@@ -75,7 +75,7 @@ def watch_clipboard():
                 last_clipboard = current
                 last_clipboard_img = current_image
                 try:
-                    requests.post(f"http://{PEER_IP}/update",
+                    requests.post(f"http://{PEER_IP}/updateClipBoard",
                                   json={"type": "text", "data":  current},
                                   timeout=2)
                 except:
